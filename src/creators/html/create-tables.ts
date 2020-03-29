@@ -91,6 +91,7 @@ export const createTables = async (portfolio: string): Promise<CreateTablesResul
 	const tableClosedFooter = createTableClosedFooter(total);
 	const tableOpened = `<tbody>${tableOpenedData.map(createTableOpenedRow).join('')}</tbody>${tableOpenedFooter}`;
 	const tableClosed = `<tbody>${tableClosedData.map(createTableClosedRow).join('')}</tbody>${tableClosedFooter}`;
+	mySQLConnector.disconnect();
 	return { tableOpened, tableClosed, formulasOpened };
 };
 
@@ -117,7 +118,7 @@ const createTableOpenedFooter = (total: { pnl: number; day: number; week: number
 	footer += `<th colspan="2" class="al-r ${total.pnl < 0 ? 'loss' : 'profit'}">${total.pnl.toFixed(2)}</th>`;
 	footer += `<th colspan="2" class="al-r ${total.day < 0 ? 'loss' : 'profit'}">${total.day.toFixed(2)}</th>`;
 	footer += `<th colspan="2" class="al-r ${total.week < 0 ? 'loss' : 'profit'}">${total.week.toFixed(2)}</th>`;
-	footer += '<th></th>></tfoot>';
+	footer += '<th></th></tfoot>';
 	return footer;
 };
 

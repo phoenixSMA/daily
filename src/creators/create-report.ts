@@ -51,11 +51,11 @@ export const createReport = async (portfolio: string) => {
 	<div style="color: black; font-size: 12px; font-weight: bold">OPENED</div>
 	<table>
 		<thead>
-        	<tr><th>Spread</th><th>Date</th><th>Side</th><th>Q</th><th>Price</th><th>Last</th><th>Pnl</th><th colspan='2'>Day</th><th colspan='2'>Week</th><th colspan='2'>Description</th></tr>
+        	<tr><th>Spread</th><th>Date</th><th>Side</th><th>Q</th><th>Price</th><th>Last</th><th>Pnl</th><th colspan='2'>Day</th><th colspan='2'>Week</th><th>Description</th></tr>
     	</thead>
 		${tableOpened}
 	</table>
-	<div style='color: black; font-size: 12px; font-weight: bold'>CLOSED</div>
+	<div style='color: black; font-size: 12px; font-weight: bold; margin-top: 10px'>CLOSED</div>
 	<table>
 		<thead>
   			<tr><th>Spread</th><th>Opened</th><th>Closed</th><th>Side</th><th>Comission</th><th>Pnl</th></tr>
