@@ -1,10 +1,11 @@
 import { Side } from "../data-service/constants";
+import { Formula } from "../data-service/types";
 
 export type TablesPortfolioReport = {
 	tableOpened: string;
 	tableClosed: string;
 	formulasOpened: {
-		formula: string;
+		formula: Formula;
 		side?: Side;
 		price?: string;
 	}[];
@@ -48,4 +49,7 @@ export type TableClosedData = {
 	pnl: string;
 }
 
-export type TableClusters = string;
+export type TableClusters = {
+	tableClusters: string;
+	formulasClusters: Formula[];
+};

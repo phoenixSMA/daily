@@ -7,7 +7,7 @@ import { BacktestClusters, Backtests } from "../../chartjs-adapter/data-types";
 import { Spread } from "../../data-service/spread";
 import { Side } from "../../data-service/constants";
 
-export const tableClusters = async (code: string): Promise<TableClusters> => {
+export const getTableClusters = async (code: string): Promise<TableClusters> => {
 	const connector = new MySQLConnector();
 	const dates: DatesInterval = {
 		from: modifyDateTime(new Date(), ModifyDateTime.Days, 1),
@@ -34,9 +34,11 @@ export const tableClusters = async (code: string): Promise<TableClusters> => {
 			clusters.push({ ...cluster, total, win100, win90, win80 });
 		}
 	}
+	const formulasClusters = clusters.map(cluster => cluster.formula);
 	const tbody = clusters.map(createRow).join('');
+	const tableClusters = `<table>${thead}${tbody}</table>`;
 	connector.disconnect();
-	return `<table>${thead}${tbody}</table>`;
+	return { tableClusters, formulasClusters };
 };
 
 const thead = '<tr><th>Formula</th><th>Side</th><th>Depth</th><th>Enter from</th><th>Enter to</th><th>Exit from</th><th>Exit to</th><th>Total</th><th>Win 100%</th><th>Win 90%</th><th>Win 80%</th><th>Sum PnL</th><th>Sum PnLpD</th></tr>';

@@ -1,4 +1,6 @@
 import { ModifyDateTime } from "./constants";
+import * as fs from "fs";
+import * as path from "path";
 
 export const date2SQLstring = (date: Date = new Date()): string => {
 	return date.toLocaleDateString()
@@ -48,4 +50,12 @@ export const formatNumber = (number: number, fractionDigits?: number) => {
 		maximumFractionDigits: fractionDigits,
 	};
 	return new Intl.NumberFormat('en-EN', options).format(number).split(',').join(' ');
+};
+
+export const cleanDir = (dir: string, prefix: string = ''): void => {
+	fs.readdirSync(dir).forEach(file => {
+		if (file.includes(prefix)) {
+			fs.unlinkSync(path.join(dir, file));
+		}
+	});
 };

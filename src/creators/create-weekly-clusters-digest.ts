@@ -1,12 +1,31 @@
 import { Attachment } from "nodemailer/lib/mailer";
-import { tableClusters } from "./html/table-clusters";
+import { getTableClusters } from "./html/table-clusters";
+import * as fs from "fs";
+import * as path from "path";
 
 export const createWeeklyClustersDigest = async (code: string): Promise<{
 	htmlReport: string;
 	attachments: Attachment[],
 }> => {
+	const server = process.env.initiator === 'server';
+	const rewrite = process.env.rewrite ? JSON.parse(process.env.rewrite) : true;
+	console.log('process.env.initiator:', process.env.initiator);
+	console.log('process.env.rewrite:', process.env.rewrite);
+	const { tableClusters, formulasClusters } = await getTableClusters(code);
 	const attachments: Attachment[] = [];
-	const table = await tableClusters(code);
+	const embedded: string[] = [];
+	const prefix = 'weekly-clusters-digest';
+	if (rewrite) {
+		const dir = 'src/img';
+		const files = await fs.promises.readdir(dir);
+		for (const file of files) {
+			if (file.includes(prefix)) {
+				await fs.promises.unlink(path.join(dir, file));
+			}
+		}
+	}
+
+
 	return {
 		htmlReport: `
 <!DOCTYPE html>
@@ -58,7 +77,7 @@ export const createWeeklyClustersDigest = async (code: string): Promise<{
   </style>
 </head>
 <body>
-${table}
+${tableClusters}
 </body>
 </html>`,
 		attachments,

@@ -4,6 +4,7 @@ import { createReportChartJSConfig } from "../chartjs-adapter/report-chart";
 import * as fs from "fs";
 import * as path from 'path';
 import { Attachment } from "nodemailer/lib/mailer";
+import { cleanDir } from "../helpers/utils";
 
 export const createPortfolioReport = async (portfolio: string): Promise<{
 	htmlReport: string;
@@ -15,36 +16,33 @@ export const createPortfolioReport = async (portfolio: string): Promise<{
 	console.log('process.env.rewrite:', process.env.rewrite);
 	console.log('Creating tables...');
 	const { tableOpened, tableClosed, formulasOpened } = await tablesPortfolioReport(portfolio);
+	const prefix = 'portfolio-report';
 	let embedded = '';
 	const attachments = [];
 	const width = 1600;
 	const height = 900;
 	if (rewrite) {
-		const dir = 'src/img';
-		const files = await fs.promises.readdir(dir);
-		for (const file of files) {
-			await fs.promises.unlink(path.join(dir, file));
-		}
+		cleanDir('src/img', prefix)
 	}
 	console.log('Total opened: ', formulasOpened.length);
 	for (const cid in formulasOpened) {
 		const { formula, side, price } = formulasOpened[cid];
 		console.log(formula);
-		const filename = `${cid}.jpg`;
-		const path = `src/img/${filename}`;
+		const filename = `${prefix}.${cid}.jpg`;
+		const relativePath = `src/img/${filename}`;
 		const imgSrc = server ? `img/${filename}` : `cid:${cid}`;
 		embedded += `<br><a href="#top" name="${cid}">${formula}</a> (${side}@${price})<br><img src="${imgSrc}">`;
 		if (rewrite) {
 			const canvasRenderService = new CanvasRenderService(width, height);
 			const config = await createReportChartJSConfig(formula, +price, side);
 			const image = await canvasRenderService.renderToBuffer(config);
-			console.log(`Writing "${path}"`);
-			fs.writeFileSync(path, image);
+			console.log(`Writing "${relativePath}"`);
+			fs.writeFileSync(relativePath, image);
 		}
 		if (!server) {
 			attachments.push({
 				filename,
-				path,
+				path: relativePath,
 				cid,
 			})
 		}
