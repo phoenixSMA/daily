@@ -1,0 +1,123 @@
+import { tablesPortfolioReport } from "./html/tables-portfolio-report";
+import { CanvasRenderService } from "chartjs-node-canvas";
+import { createReportChartJSConfig } from "../chartjs-adapter/report-chart";
+import * as fs from "fs";
+import * as path from 'path';
+import { Attachment } from "nodemailer/lib/mailer";
+
+export const createPortfolioReport = async (portfolio: string): Promise<{
+	htmlReport: string;
+	attachments: Attachment[]
+}> => {
+	const server = process.env.initiator === 'server';
+	const rewrite = process.env.rewrite ? JSON.parse(process.env.rewrite) : true;
+	console.log('process.env.initiator:', process.env.initiator);
+	console.log('process.env.rewrite:', process.env.rewrite);
+	console.log('Creating tables...');
+	const { tableOpened, tableClosed, formulasOpened } = await tablesPortfolioReport(portfolio);
+	let embedded = '';
+	const attachments = [];
+	const width = 1600;
+	const height = 900;
+	if (rewrite) {
+		const dir = 'src/img';
+		const files = await fs.promises.readdir(dir);
+		for (const file of files) {
+			await fs.promises.unlink(path.join(dir, file));
+		}
+	}
+	console.log('Total opened: ', formulasOpened.length);
+	for (const cid in formulasOpened) {
+		const { formula, side, price } = formulasOpened[cid];
+		console.log(formula);
+		const filename = `${cid}.jpg`;
+		const path = `src/img/${filename}`;
+		const imgSrc = server ? `img/${filename}` : `cid:${cid}`;
+		embedded += `<br><a href="#top" name="${cid}">${formula}</a> (${side}@${price})<br><img src="${imgSrc}">`;
+		if (rewrite) {
+			const canvasRenderService = new CanvasRenderService(width, height);
+			const config = await createReportChartJSConfig(formula, +price, side);
+			const image = await canvasRenderService.renderToBuffer(config);
+			console.log(`Writing "${path}"`);
+			fs.writeFileSync(path, image);
+		}
+		if (!server) {
+			attachments.push({
+				filename,
+				path,
+				cid,
+			})
+		}
+	}
+	return {
+		htmlReport: `	
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Report</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      padding: 0;
+      margin: 0;
+      background: #eee;
+      color: black;
+      height: 100vh;
+    }
+    table {
+      border-collapse: collapse;
+      font-size: 10px;
+      table-layout: fixed;
+    }
+    td, th {
+      border: 1px solid darkgray;
+      text-align: center;
+      padding: 1px 3px;
+      white-space: nowrap;
+      color: black;
+      vertical-align: center;
+    }
+    td a {
+    	text-decoration: none;
+    	color: inherit;
+    }
+    .sell-row {
+      background-color: #eed4d4;
+    }
+    .buy-row {
+      background-color: #d4eed4;
+    }
+    .al-r {
+      text-align: right;
+    }
+    .loss {
+      color: red;
+    }
+    .profit {
+      color: darkgreen;
+    }
+  </style>
+</head>
+<body>
+	<a name="top"></a>	
+	<div style="color: black; font-size: 12px; font-weight: bold">OPENED</div>
+	<table>
+		<thead>
+        	<tr><th>Spread</th><th>Date</th><th>Side</th><th>Q</th><th>Price</th><th>Last</th><th>Pnl</th><th colspan='2'>Day</th><th colspan='2'>Week</th><th>Description</th></tr>
+    	</thead>
+		${tableOpened}
+	</table>
+	<div style='color: black; font-size: 12px; font-weight: bold; margin-top: 10px'>CLOSED</div>
+	<table>
+		<thead>
+  			<tr><th>Spread</th><th>Opened</th><th>Closed</th><th>Side</th><th>Comission</th><th>Pnl</th></tr>
+  		</thead>
+		${tableClosed}
+	</table>
+	${embedded}
+	</body>
+</html>`,
+		attachments
+	};
+};

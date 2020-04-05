@@ -1,32 +1,44 @@
-import { Formula, Formula2LegsResult, Leg } from "./types";
-import { Side } from "./constants";
+import { DatesInterval, Formula, Formula2LegsResult, Leg } from "./types";
+import { Side, SpreadType } from "./constants";
 import { MySQLConnector } from "../connectors/mysql-connector";
+import { correctMySQLDateTime, monthCode2Number } from "../helpers/utils";
 
 export class Spread {
-	public originalFormula: string;
+	private readonly _originalFormula: string;
 	private readonly _qty: number;
 	private readonly _side: Side;
 	private readonly _legs: Leg[] = [];
-	private readonly _formula: string = '';
+	private readonly _formula: Formula;
+	private readonly _spreadType: SpreadType;
+	private _searchMask: string;
 
 	constructor(formula: string, connector?: MySQLConnector) {
 		this._connector = connector;
-		this.originalFormula = formula;
+		this._originalFormula = formula;
 		const result = Spread.formula2Legs(formula);
 		if (!result.message) {
 			this._legs = result.legs;
 			this._formula = result.formula;
 			this._side = result.spreadSide;
 			this._qty = result.spreadQty;
+			this._spreadType = result.spreadType;
 		} else {
 			throw result.message;
 		}
+	}
+
+	get spreadType() {
+		return this._spreadType;
 	}
 
 	private _comma: number;
 
 	get comma() {
 		return this._comma;
+	}
+
+	get originalFormula() {
+		return this._originalFormula;
 	}
 
 	private _multiplier: number;
@@ -64,7 +76,7 @@ export class Spread {
 			legs: [],
 			spreadSide:
 			Side.Buy,
-			spreadQty: 1
+			spreadQty: 1,
 		};
 		let legs = formula.split('-')
 			.map(el => el.split('+'))
@@ -127,6 +139,27 @@ export class Spread {
 				legs.forEach(leg => leg.qty = leg.qty / spreadQty);
 			}
 		}
+		switch (legs.length) {
+			case 1:
+				result.spreadType = SpreadType.Single;
+				break;
+			case 2:
+				if (legs[0].code === legs[1].code) {
+					result.spreadType = SpreadType.Calendar;
+				} else {
+					result.spreadType = SpreadType.InterComodity;
+				}
+				break;
+			case 3:
+				result.spreadType = SpreadType.Butterfly;
+				break;
+			case 4:
+				result.spreadType = SpreadType.Condor;
+				break;
+			default:
+				result.spreadType = SpreadType.Other;
+				break;
+		}
 		return { ...result, formula: Spread.legs2Formula(legs), legs };
 	}
 
@@ -164,13 +197,16 @@ export class Spread {
 			return a;
 		}, []);
 		for (const code of codes) {
-			const select = `SELECT multiplier, comma, globex_code, price_step FROM futures WHERE code = '${code}'`;
+			const select = `SELECT multiplier, comma, globex_code, price_step, listed_mask FROM futures WHERE code = '${code}'`;
 			const res = (await this._connector.query(select))[0];
-			const { multiplier, comma, globex_code, price_step } = res;
+			const { multiplier, comma, globex_code, price_step, listed_mask } = res;
 			for (let leg of this._legs) {
 				if (leg.code === code) {
 					leg = Object.assign(leg, { multiplier, comma, globex_code, price_step });
 				}
+			}
+			if (this._legs[0].code) {
+				this._searchMask = listed_mask + listed_mask;
 			}
 		}
 		const multipliers = this._legs.reduce((a, c): string[] => {
@@ -185,5 +221,39 @@ export class Spread {
 			this._multiplier = multipliers[0];
 		}
 		this._comma = Math.max(...this._legs.map(leg => leg.comma));
+		for (let leg of this.legs) {
+			const select = `SELECT * FROM contracts WHERE contract = '${leg.contract}'`;
+			const res = (await this._connector.query(select))[0];
+			if (res) {
+				leg.lastDate = res.first_notice ? correctMySQLDateTime(res.first_notice) : correctMySQLDateTime(res.expiry_date);
+			} else {
+				leg.lastDate = new Date('1971-02-17');
+			}
+		}
+	}
+
+	public getFormula(shift: number): Formula {
+		const legs = this.legs.map((leg: Leg) => {
+			const _leg = Object.assign({}, leg);
+			_leg.year += shift;
+			return _leg;
+		});
+		return Spread.legs2Formula(legs);
+	}
+
+	public getBaseInterval(): DatesInterval {
+		return {
+			from: new Date(this._legs[0].year - 1, monthCode2Number(this._legs[0].month)),
+			to: this._legs[0].lastDate,
+		}
+	}
+
+	public getSpreadWidth(): number {
+		if (this._spreadType !== SpreadType.Calendar) {
+			return 0;
+		}
+		const idx1 = this._searchMask.indexOf(this._legs[0].month);
+		const idx2 = this._searchMask.indexOf(this._legs[1].month, idx1 + 1);
+		return idx2 - idx1;
 	}
 }

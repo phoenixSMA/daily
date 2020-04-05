@@ -1,4 +1,4 @@
-import { Side } from "./constants";
+import { AverageType, Side, SpreadType } from "./constants";
 
 export type Leg = {
 	contract: string
@@ -11,6 +11,7 @@ export type Leg = {
 	comma?: number;
 	globex_code?: string;
 	price_step?: number;
+	lastDate?: Date;
 	kline?: Kline;
 }
 
@@ -23,6 +24,7 @@ export type Formula2LegsResult = {
 	legs: Leg[];
 	spreadSide: Side;
 	spreadQty: number;
+	spreadType?: SpreadType;
 	message?: string;
 };
 
@@ -34,3 +36,24 @@ export type KlineRecord = Record<KlineDate, KlinePrice>;
 
 export type Kline = KlineRecord[];
 
+export type DatesInterval = {
+	from?: Date;
+	to?: Date;
+}
+
+export type PatternDepth = string;
+
+export type Patterns = Record<AverageType, Record<PatternDepth, Kline>>;
+
+export type BacktestDate = string;
+
+export type BacktestValue = number;
+
+export type BacktestRecord = {
+	side: Side;
+	winPercent: number;
+	dateEnter: BacktestDate;
+	dateExit: BacktestDate;
+	pnl: BacktestValue;
+	pnlpd: BacktestValue;
+};

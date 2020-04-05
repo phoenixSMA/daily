@@ -1,9 +1,13 @@
 import { Side } from "../data-service/constants";
 
-export type CreateTablesResult = {
+export type TablesPortfolioReport = {
 	tableOpened: string;
 	tableClosed: string;
-	formulasOpened: string[];
+	formulasOpened: {
+		formula: string;
+		side?: Side;
+		price?: string;
+	}[];
 };
 
 export type TableOpenedData = {
@@ -43,3 +47,5 @@ export type TableClosedData = {
 	value: number;
 	pnl: string;
 }
+
+export type TableClusters = string;

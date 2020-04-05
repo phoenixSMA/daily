@@ -16,7 +16,7 @@ export class MySQLConnector {
 				console.error('error connecting: ' + err.stack);
 				return;
 			}
-			console.log('connected as id ' + this.connection.threadId);
+			console.log('MySQLConnector > constructor: connected as id ' + this.connection.threadId);
 		});
 	};
 
@@ -34,7 +34,7 @@ export class MySQLConnector {
 
 	public disconnect() {
 		this.connection.end(msg => {
-			console.log(msg);
+			console.log('MySQLConnector > disconnect: ', msg);
 		});
 	}
 }

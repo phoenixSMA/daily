@@ -1,12 +1,16 @@
 import { MySQLConnector } from "../../connectors/mysql-connector";
-import { CreateTablesResult, TableClosedData, TableOpenedData } from "../types";
+import { TablesPortfolioReport, TableClosedData, TableOpenedData } from "../types";
 import { Side, SortDirection } from "../../data-service/constants";
-import { mySQLDate2String } from "../../helpers/utils";
 import { Spread } from "../../data-service/spread";
 import { DataSource } from "../../data-service/data-source";
+import { correctMySQLDateTime, date2SQLstring } from "../../helpers/utils";
 
-export const createTables = async (portfolio: string): Promise<CreateTablesResult> => {
-	let formulasOpened: string[];
+export const tablesPortfolioReport = async (portfolio: string): Promise<TablesPortfolioReport> => {
+	let formulasOpened: {
+		formula: string;
+		side?: Side;
+		price?: string;
+	}[] = [];
 	const mySQLConnector = new MySQLConnector();
 	const dataSource = new DataSource(mySQLConnector);
 	let select = `SELECT tab_ids FROM portfolio WHERE name = "${portfolio}"`;
@@ -17,7 +21,6 @@ export const createTables = async (portfolio: string): Promise<CreateTablesResul
 	const tabs = await mySQLConnector.query(select);
 	const tableOpenedData: Partial<TableOpenedData> [] = tabs.filter((tab: any) => tab.status === 'OPENED');
 	const tableClosedData: Partial<TableClosedData> [] = tabs.filter((tab: any) => tab.status === 'CLOSED');
-	formulasOpened = tableOpenedData.map(data => data.formula);
 	const total = {
 		pnl: 0,
 		day: 0,
@@ -35,7 +38,7 @@ export const createTables = async (portfolio: string): Promise<CreateTablesResul
 		select = `SELECT * FROM trades WHERE tab_id = ${tab.tab_id} ORDER BY date, time`;
 		const trades = await mySQLConnector.query(select);
 		if (trades.length > 0) {
-			tab.opened = mySQLDate2String(trades[0].date);
+			tab.opened = date2SQLstring(correctMySQLDateTime(trades[0].date));
 			for (const trade of trades) {
 				const sign = trade.side === Side.Buy ? 1 : -1;
 				tab.qty += trade.quantity * sign;
@@ -61,6 +64,11 @@ export const createTables = async (portfolio: string): Promise<CreateTablesResul
 			total.week += +tab.week.pnl;
 			tab.qty = Math.abs(tab.qty);
 		}
+		formulasOpened.push({
+			formula: tab.formula,
+			side: tab.side,
+			price: tab.price,
+		})
 	}
 	const tableOpenedFooter = createTableOpenedFooter(total);
 	total.pnl = 0;
@@ -74,8 +82,8 @@ export const createTables = async (portfolio: string): Promise<CreateTablesResul
 		select = `SELECT * FROM trades WHERE tab_id = ${tab.tab_id} ORDER BY date, time`;
 		const trades = await mySQLConnector.query(select);
 		if (trades.length > 0) {
-			tab.opened = mySQLDate2String(trades[0].date);
-			tab.closed = mySQLDate2String(trades[trades.length - 1].date);
+			tab.opened = date2SQLstring(correctMySQLDateTime(trades[0].date));
+			tab.closed = date2SQLstring(correctMySQLDateTime(trades[trades.length - 1].date));
 			for (const trade of trades) {
 				const sign = trade.side === Side.Buy ? 1 : -1;
 				tab.value += trade.price * trade.quantity * sign;
@@ -95,9 +103,9 @@ export const createTables = async (portfolio: string): Promise<CreateTablesResul
 	return { tableOpened, tableClosed, formulasOpened };
 };
 
-const createTableOpenedRow = (data: Partial<TableOpenedData>): string => {
+const createTableOpenedRow = (data: Partial<TableOpenedData>, aname: number): string => {
 	let tr = `<tr class="${data.side === Side.Buy ? 'buy-row' : 'sell-row'}">`;
-	tr += `<td>${data.formula}</td>`;
+	tr += `<td><a href="#${aname}">${data.formula}</a></td>`;
 	tr += `<td>${data.opened}</td>`;
 	tr += `<td>${data.side}</td>`;
 	tr += `<td>${data.qty}</td>`;

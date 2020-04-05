@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
-import { createReport } from "./creators/create-report";
-import { mySQLDate2String } from "./helpers/utils";
+import { createPortfolioReport } from "./creators/create-portfolio-report";
+import { date2SQLstring } from "./helpers/utils";
 
 (async () => {
 	const transporter = nodemailer.createTransport({
@@ -13,19 +13,15 @@ import { mySQLDate2String } from "./helpers/utils";
 
 	const portfolio = 'AO.2020';
 
-	const htmlReport = await createReport(portfolio);
+	const { htmlReport, attachments } = await createPortfolioReport(portfolio);
 
 	const mailOptions = {
 		from: 'phoenixsma@gmail.com',
 		to: 'phoenixsma@gmail.com',
-		subject: `${portfolio} ${mySQLDate2String()}`,
+		subject: `${portfolio} ${date2SQLstring()}`,
 		text: 'Report',
 		html: htmlReport,
-		attachments: [{
-			filename: 'image.jpg',
-			path: 'src/image.jpg',
-			cid: 'unique@nodemailer.com'
-		}]
+		attachments,
 	};
 
 	transporter.sendMail(mailOptions, function (error: Error, info: any) {
