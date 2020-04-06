@@ -1,20 +1,20 @@
 import { ChartDataSets, ChartPoint } from 'chart.js';
-import { spreadsColors } from "../constants";
 
-export const scatterLast = (point: ChartPoint): ChartDataSets => {
+export const scatterLast = (point: ChartPoint, options?: { borderWidth?: number; pointRadius?: number; yAxisID?: 'Yaxis1' | 'Yaxis2' }): ChartDataSets => {
+	const { borderWidth = 4, pointRadius = 7, yAxisID = 'Yaxis1' } = options || {};
 	return {
 		type: `scatter`,
 		label: `Last`,
 		data: [point],
-		borderColor: spreadsColors[0],
-		backgroundColor: spreadsColors[0],
+		borderColor: 'black',
+		backgroundColor: 'darkgrey',
 		fill: false,
 		lineTension: 0,
 		borderJoinStyle: 'round',
-		borderWidth: 4,
-		pointRadius: 7,
+		borderWidth,
+		pointRadius,
 		pointHoverRadius: 4,
 		hideInLegendAndTooltip: false,
-		yAxisID: 'Yaxis1',
+		yAxisID,
 	};
 };

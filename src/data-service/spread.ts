@@ -243,7 +243,7 @@ export class Spread {
 
 	public getBaseInterval(): DatesInterval {
 		return {
-			from: new Date(this._legs[0].year - 1, monthCode2Number(this._legs[0].month)),
+			from: correctMySQLDateTime( new Date(this._legs[0].year - 1, monthCode2Number(this._legs[0].month))),
 			to: this._legs[0].lastDate,
 		}
 	}

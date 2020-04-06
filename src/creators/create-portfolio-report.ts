@@ -1,8 +1,7 @@
 import { tablesPortfolioReport } from "./html/tables-portfolio-report";
 import { CanvasRenderService } from "chartjs-node-canvas";
-import { createReportChartJSConfig } from "../chartjs-adapter/report-chart";
+import { getPatternsBacktestChartJSConfig } from "../chartjs-adapter/patterns-backtest-chart";
 import * as fs from "fs";
-import * as path from 'path';
 import { Attachment } from "nodemailer/lib/mailer";
 import { cleanDir } from "../helpers/utils";
 
@@ -31,10 +30,10 @@ export const createPortfolioReport = async (portfolio: string): Promise<{
 		const filename = `${prefix}.${cid}.jpg`;
 		const relativePath = `src/img/${filename}`;
 		const imgSrc = server ? `img/${filename}` : `cid:${cid}`;
-		embedded += `<br><a href="#top" name="${cid}">${formula}</a> (${side}@${price})<br><img src="${imgSrc}">`;
+		embedded += `<br><a href="#888" id="${cid}" name="${cid}">${formula}</a> (${side}@${price})<br><img src="${imgSrc}" alt="${cid}">`;
 		if (rewrite) {
 			const canvasRenderService = new CanvasRenderService(width, height);
-			const config = await createReportChartJSConfig(formula, +price, side);
+			const config = await getPatternsBacktestChartJSConfig(formula, +price, side);
 			const image = await canvasRenderService.renderToBuffer(config);
 			console.log(`Writing "${relativePath}"`);
 			fs.writeFileSync(relativePath, image);
@@ -98,8 +97,7 @@ export const createPortfolioReport = async (portfolio: string): Promise<{
   </style>
 </head>
 <body>
-	<a name="top"></a>	
-	<div style="color: black; font-size: 12px; font-weight: bold">OPENED</div>
+	<div style="color: black; font-size: 12px; font-weight: bold" id="888" name="888">OPENED</div>
 	<table>
 		<thead>
         	<tr><th>Spread</th><th>Date</th><th>Side</th><th>Q</th><th>Price</th><th>Last</th><th>Pnl</th><th colspan='2'>Day</th><th colspan='2'>Week</th><th>Description</th></tr>

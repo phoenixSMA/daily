@@ -3,7 +3,7 @@ import { ChartDataSets } from "chart.js";
 import { DataSource } from "../../data-service/data-source";
 import { spreadsColors } from "../constants";
 
-export const lineCurrent = (kline: Kline): ChartDataSets => {
+export const lineCurrent = (kline: Kline, width: number = 4): ChartDataSets => {
 	return {
 		type: `line`,
 		label: `Current`,
@@ -16,7 +16,7 @@ export const lineCurrent = (kline: Kline): ChartDataSets => {
 		fill: false,
 		lineTension: 0,
 		borderJoinStyle: 'round',
-		borderWidth: 4,
+		borderWidth: width,
 		pointRadius: 0,
 		pointHoverRadius: 1,
 		hideInLegendAndTooltip: false,

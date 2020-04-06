@@ -32,7 +32,7 @@ export const patternsColors = {
 	}
 };
 
-export enum ValueTypes {
+export enum ValueType {
 	'Pnl'='pnl',
 	"Pnlpd"= 'pnlpd',
 }

@@ -33,8 +33,8 @@ export class MySQLConnector {
 	}
 
 	public disconnect() {
-		this.connection.end(msg => {
-			console.log('MySQLConnector > disconnect: ', msg);
+		this.connection.end(() => {
+			console.log('MySQLConnector > disconnected');
 		});
 	}
 }

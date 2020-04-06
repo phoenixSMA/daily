@@ -15,6 +15,7 @@ import { AverageType, Side, SortDirection } from "./constants";
 import { correctMySQLDateTime, date2SQLstring, diffDays, modifyDateTime } from "../helpers/utils";
 import { Spread } from "./spread";
 import { ModifyDateTime } from "../helpers/constants";
+import { Backtests } from "../chartjs-adapter/data-types";
 
 export class DataSource {
 	private readonly _connector: MySQLConnector;
@@ -185,10 +186,10 @@ export class DataSource {
 		return result.map((row: { date: Date; settle: number }) => ({ [date2SQLstring(correctMySQLDateTime(row.date))]: row.settle }));
 	}
 
-	public async getBactestIdByFormula(formula: Formula): Promise<number[]> {
-		const select = `SELECT b_id FROM backtests WHERE formula = '${formula}' ORDER BY depth DESC`;
-		const result = await this._connector.query(select);
-		return result.map((row: { b_id: number }) => row.b_id);
+	public async getBactestIdByFormula(formula: Formula): Promise<{ b_id: number; depth: number }[]> {
+		const select = `SELECT b_id, depth FROM backtests WHERE formula = '${formula}' ORDER BY depth DESC`;
+		const result: Backtests[] = await this._connector.query(select);
+		return result.map(({ b_id, depth }) => ({ b_id, depth }));
 	}
 
 	public async getBacktestData(bId: number): Promise<BacktestRecord[]> {

@@ -16,7 +16,7 @@ app.get("/portfolio", async (request, response) => {
 });
 
 app.get('/weekly', async (request, response) => {
-	const code = 'RB';
+	const code = 'NG';
 	const { htmlReport } = await createWeeklyClustersDigest(code);
 	response.send(htmlReport);
 });

@@ -3,9 +3,10 @@ import { BacktestRecord } from "../../data-service/types";
 import { Side } from "../../data-service/constants";
 import { date2SQLstring } from "../../helpers/utils";
 import { backtestLineColor } from "../utils";
-import { ValueTypes } from "../constants";
+import { ValueType } from "../constants";
+import { scattersSpacers } from "./scatters-spacers";
 
-export const linesBacktestData = (backtestData: BacktestRecord[], valueType: ValueTypes, maxValue?: number): ChartDataSets[] =>{
+export const linesBacktestData = (backtestData: BacktestRecord[], valueType: ValueType, autoSpacers: boolean = true, spacerRatio: number = 3): ChartDataSets[] => {
 	const datasets: ChartDataSets[] = backtestData.map((backtestRecord: BacktestRecord) => ({
 		type: 'line',
 		data: [{
@@ -25,28 +26,35 @@ export const linesBacktestData = (backtestData: BacktestRecord[], valueType: Val
 		pointHoverRadius: 2,
 		yAxisID: "Yaxis2",
 	}));
-	if (!maxValue) {
-		maxValue = Math.max(...backtestData.map((backtestRecord: BacktestRecord) => backtestRecord[valueType]));
-	}
-	datasets.push({
-		type: 'scatter',
-		data: [{
+	if (autoSpacers) {
+		const maxValue = Math.max(...backtestData.map((backtestRecord: BacktestRecord) => backtestRecord[valueType]));
+		// datasets.push({
+		// 	type: 'scatter',
+		// 	data: [{
+		// 		x: date2SQLstring(),
+		// 		y: -maxValue * spacerRatio,
+		// 	}, {
+		// 		x: date2SQLstring(),
+		// 		y: maxValue * spacerRatio,
+		// 	}],
+		// 	borderColor: 'darkgoldenrod',
+		// 	backgroundColor: 'darkgoldenrod',
+		// 	fill: false,
+		// 	lineTension: 0,
+		// 	borderJoinStyle: 'round',
+		// 	borderWidth: 0,
+		// 	pointRadius: 0,
+		// 	pointHoverRadius: 0,
+		// 	hideInLegendAndTooltip: true,
+		// 	yAxisID: "Yaxis2",
+		// });
+		datasets.push(scattersSpacers([{
 			x: date2SQLstring(),
-			y: -maxValue * 3,
+			y: -maxValue * spacerRatio,
 		}, {
 			x: date2SQLstring(),
-			y: maxValue * 3,
-		}],
-		borderColor: 'darkgoldenrod',
-		backgroundColor: 'darkgoldenrod',
-		fill: false,
-		lineTension: 0,
-		borderJoinStyle: 'round',
-		borderWidth: 0,
-		pointRadius: 0,
-		pointHoverRadius: 0,
-		hideInLegendAndTooltip: true,
-		yAxisID: "Yaxis2",
-	});
+			y: maxValue * spacerRatio,
+		}], 'Yaxis2'))
+	}
 	return datasets;
 };

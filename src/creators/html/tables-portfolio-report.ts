@@ -103,20 +103,21 @@ export const tablesPortfolioReport = async (portfolio: string): Promise<TablesPo
 	return { tableOpened, tableClosed, formulasOpened };
 };
 
-const createTableOpenedRow = (data: Partial<TableOpenedData>, aname: number): string => {
-	let tr = `<tr class="${data.side === Side.Buy ? 'buy-row' : 'sell-row'}">`;
-	tr += `<td><a href="#${aname}">${data.formula}</a></td>`;
-	tr += `<td>${data.opened}</td>`;
-	tr += `<td>${data.side}</td>`;
-	tr += `<td>${data.qty}</td>`;
-	tr += `<td class="al-r">${data.price}</td>`;
-	tr += `<td class="al-r">${data.last}</td>`;
-	tr += `<td class="al-r ${+data.pnl >= 0 ? 'profit' : 'loss'}">${data.pnl}</td>`;
-	tr += `<td class="al-r">${data.day.points}</td>`;
-	tr += `<td class="al-r ${+data.day.pnl >= 0 ? 'profit' : 'loss'}">${data.day.pnl}</td>`;
-	tr += `<td class="al-r">${data.week.points}</td>`;
-	tr += `<td class="al-r ${+data.week.pnl >= 0 ? 'profit' : 'loss'}">${data.week.pnl}</td>`;
-	tr += `<td>${data.description}</td>`;
+const createTableOpenedRow = (row: Partial<TableOpenedData>, aname: number): string => {
+	let tr = `<tr class="${row.side === Side.Buy ? 'buy-row' : 'sell-row'}">`;
+	tr += `<td><a href="#${aname}">${row.formula}</a></td>`;
+	tr += `<td>${row.opened}</td>`;
+
+	tr += `<td>${row.side}</td>`;
+	tr += `<td>${row.qty}</td>`;
+	tr += `<td class="al-r">${row.price}</td>`;
+	tr += `<td class="al-r">${row.last}</td>`;
+	tr += `<td class="al-r ${+row.pnl >= 0 ? 'profit' : 'loss'}">${row.pnl}</td>`;
+	tr += `<td class="al-r">${row.day.points}</td>`;
+	tr += `<td class="al-r ${+row.day.pnl >= 0 ? 'profit' : 'loss'}">${row.day.pnl}</td>`;
+	tr += `<td class="al-r">${row.week.points}</td>`;
+	tr += `<td class="al-r ${+row.week.pnl >= 0 ? 'profit' : 'loss'}">${row.week.pnl}</td>`;
+	tr += `<td>${row.description}</td>`;
 	tr += '</tr>';
 	return tr;
 };

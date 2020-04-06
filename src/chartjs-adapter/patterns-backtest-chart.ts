@@ -11,10 +11,10 @@ import { lineCurrent } from "./datasets/line-current";
 import { linesPatterns } from "./datasets/lines-patterns";
 import { linePosition } from "./datasets/line-position";
 import { linesBacktestData } from "./datasets/lines-backtest-data";
-import { ValueTypes } from "./constants";
+import { ValueType } from "./constants";
 import Chart = require("chart.js");
 
-export const createReportChartJSConfig = async (formula: Formula, positionPrice?: number, positionSide?: Side): Promise<Chart.ChartConfiguration> => {
+export const getPatternsBacktestChartJSConfig = async (formula: Formula, positionPrice?: number, positionSide?: Side): Promise<Chart.ChartConfiguration> => {
 	const connector = new MySQLConnector();
 	const dataSource = new DataSource(connector);
 	const spread = new Spread(formula, connector);
@@ -50,9 +50,9 @@ export const createReportChartJSConfig = async (formula: Formula, positionPrice?
 		dates: spread.getBaseInterval(),
 	});
 
-	const bIds = await dataSource.getBactestIdByFormula(formula);
-	if (bIds.length > 0) {
-		data.backtestData = await dataSource.getBacktestData(bIds[0]);
+	const result = await dataSource.getBactestIdByFormula(formula);
+	if (result.length > 0) {
+		data.backtestData = await dataSource.getBacktestData(result[0].b_id);
 	}
 
 	const config: Chart.ChartConfiguration = {
@@ -132,7 +132,7 @@ export const createReportChartJSConfig = async (formula: Formula, positionPrice?
 		config.data.datasets.push(linePosition(dates, positionPrice, positionSide));
 	}
 
-	config.data.datasets.push(...linesBacktestData(data.backtestData, ValueTypes.Pnl));
+	config.data.datasets.push(...linesBacktestData(data.backtestData, ValueType.Pnl));
 
 	connector.disconnect();
 	return config;
