@@ -1,9 +1,12 @@
 import express from 'express';
 import { createPortfolioReport } from "./creators/create-portfolio-report";
-import { createWeeklyClustersDigest } from "./creators/create-weekly-clusters-digest";
+import { createClustersDigest } from "./creators/create-clusters-digest";
+import { DatesInterval } from "./data-service/types";
+import { modifyDateTime } from "./helpers/utils";
+import { ModifyDateTime } from "./helpers/constants";
 
 process.env.initiator = 'server';
-process.env.rewrite = 'false';
+process.env.rewrite = 'true';
 
 const app = express();
 
@@ -16,8 +19,12 @@ app.get("/portfolio", async (request, response) => {
 });
 
 app.get('/weekly', async (request, response) => {
-	const code = 'NG';
-	const { htmlReport } = await createWeeklyClustersDigest(code);
+	const code = 'C';
+	const dates: DatesInterval = {
+		from: modifyDateTime(new Date(), ModifyDateTime.Days, 2),
+		to: modifyDateTime(new Date(), ModifyDateTime.Days, 8),
+	};
+	const { htmlReport } = await createClustersDigest(code, dates);
 	response.send(htmlReport);
 });
 

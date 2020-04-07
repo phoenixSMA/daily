@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { createWeeklyClustersDigest } from "./creators/create-weekly-clusters-digest";
+import { createClustersDigest } from "./creators/create-clusters-digest";
 import { DatesInterval } from "./data-service/types";
 import { modifyDateTime } from "./helpers/utils";
 import { ModifyDateTime } from "./helpers/constants";
@@ -13,8 +13,8 @@ import { ModifyDateTime } from "./helpers/constants";
 		}
 	});
 
-	const codes = ['C', 'S', 'SM', 'BO', 'W', 'KW', 'LC', 'LN', 'FC', 'NG', 'CL', 'HO', 'RB'];
-	// const codes = ['C'];
+	// const codes = ['C', 'S', 'SM', 'BO', 'W', 'KW', 'LC', 'LN', 'FC', 'NG', 'CL', 'HO', 'RB'];
+	const codes = ['C'];
 
 	const dates: DatesInterval = {
 		from: modifyDateTime(new Date(), ModifyDateTime.Days, 2),
@@ -23,7 +23,7 @@ import { ModifyDateTime } from "./helpers/constants";
 
 	for (const code of codes) {
 		const subject = `"${code}" Weekly Digest`;
-		const { htmlReport, attachments } = await createWeeklyClustersDigest(code, dates);
+		const { htmlReport, attachments } = await createClustersDigest(code, dates);
 
 		const mailOptions = {
 			from: 'phoenixsma@gmail.com',

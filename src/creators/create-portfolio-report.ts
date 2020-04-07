@@ -1,4 +1,4 @@
-import { tablesPortfolioReport } from "./html/tables-portfolio-report";
+import { tablesPortfolioReport } from "./tables/tables-portfolio-report";
 import { CanvasRenderService } from "chartjs-node-canvas";
 import { getPatternsBacktestChartJSConfig } from "../chartjs-adapter/patterns-backtest-chart";
 import * as fs from "fs";

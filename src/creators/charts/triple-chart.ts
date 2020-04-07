@@ -1,38 +1,37 @@
 import { Attachment } from "nodemailer/lib/mailer";
-import { getTableClusters } from "./html/table-clusters";
-import { cleanDir, date2SQLstring } from "../helpers/utils";
-import { CanvasRenderService } from "chartjs-node-canvas";
-import * as fs from "fs";
-import { getBacktestChartJSConfig, Limits } from "../chartjs-adapter/backtest-chart";
+import { Formula } from "../../data-service/types";
+import { cleanDir, date2SQLstring } from "../../helpers/utils";
+import { getBacktestChartJSConfig, Limits } from "../../chartjs-adapter/backtest-chart";
 import { ChartConfiguration } from "chart.js";
-import { scattersSpacers } from "../chartjs-adapter/datasets/scatters-spacers";
-import { getPatternsBacktestChartJSConfig } from "../chartjs-adapter/patterns-backtest-chart";
-import { DatesInterval } from "../data-service/types";
+import * as fs from	"fs";
+import { scattersSpacers } from "../../chartjs-adapter/datasets/scatters-spacers";
+import { CanvasRenderService } from "chartjs-node-canvas";
+import { getPatternsBacktestChartJSConfig } from "../../chartjs-adapter/patterns-backtest-chart";
 
-export const createWeeklyClustersDigest = async (code: string, dates: DatesInterval): Promise<{
-	htmlReport: string;
-	attachments: Attachment[],
-}> => {
+/**
+ * Создает тройной чарт-бандл: backtests-15-depth, backtests-10-depth, paterns-bactests
+ * backtests чарты синхронизированы по по обоим осям
+ * process.env.initiator === 'server' => для отображения на html странице на express-сервере
+ * process.env.rewrite === false => не создавать новые .jpg поверх старых, использовать старые
+ * @param params
+ */
+export const tripleChart = async (params: TripleChartParams): Promise<TripleChartResult> => {
+	const { prefix, formulas, bactestsChartDimensions, patternsChartDimensions, topId } = params;
+	const embedded: string[] = [];
+	const attachments: Attachment[] = [];
 	const server = process.env.initiator === 'server';
 	const rewrite = process.env.rewrite ? JSON.parse(process.env.rewrite) : true;
-	console.log('process.env.initiator:', process.env.initiator);
+	console.log('TripleChart > process.env.initiator:', process.env.initiator);
 	console.log('process.env.rewrite:', process.env.rewrite);
-	const { tableClusters, formulasClusters } = await getTableClusters(code, dates);
-	const attachments: Attachment[] = [];
-	const embedded: string[] = [];
-	const prefix = 'weekly-clusters-digest';
 	if (rewrite) {
 		cleanDir('src/img', prefix);
 	}
-	let width: number;
-	let height: number;
-	console.log(formulasClusters.length);
-	for (const idx in formulasClusters) {
-		width = 1600;
-		height = 300;
-		const formula = formulasClusters[idx];
-		console.log(formula);
-		let embedPart = `<br><a href="#888" name="${idx}" id="${idx}">${formula}</a>`;
+	console.log('TripleChart > Total chart-bundles to create:', formulas.length);
+	for (const idx in formulas) {
+		let { width = 1600, height = 300 } = bactestsChartDimensions || {};
+		const formula = formulas[idx];
+		console.log('TripleChart > formula:', formula);
+		let embedPart = `<br><a href="#${topId}" name="${idx}" id="${idx}">${formula}</a>`;
 		const totalLimits: Limits = {
 			x: {
 				min: new Date('20171-02-17'),
@@ -51,7 +50,7 @@ export const createWeeklyClustersDigest = async (code: string, dates: DatesInter
 			const imgSrc = server ? `img/${filename}` : `cid:${cid}`;
 			embedded.push(`${embedPart}<br><img src="${imgSrc}" alt="${cid}">`);
 			embedPart = '';
-			if (rewrite) {
+			if (rewrite || !fs.existsSync(relativePath)) {
 				const { config, limits } = await getBacktestChartJSConfig(formula, depth);
 				if (config.data.datasets.length > 2) {
 					configs.push({ config, relativePath });
@@ -84,12 +83,11 @@ export const createWeeklyClustersDigest = async (code: string, dates: DatesInter
 					'Yaxis2'));
 				const canvasRenderService = new CanvasRenderService(width, height);
 				const image = await canvasRenderService.renderToBuffer(config);
-				console.log(`Writing "${relativePath}"`);
+				console.log(`TripleChart > Writing "${relativePath}"`);
 				fs.writeFileSync(relativePath, image);
 			}
 		}
-		width = 1600;
-		height = 900;
+		({width = 1600, height = 900} = patternsChartDimensions || {});
 		const filename = `${prefix}.patterns.${idx}.jpg`;
 		const relativePath = `src/img/${filename}`;
 		const cid = `patterns-${idx}`;
@@ -99,7 +97,7 @@ export const createWeeklyClustersDigest = async (code: string, dates: DatesInter
 			const canvasRenderService = new CanvasRenderService(width, height);
 			const config = await getPatternsBacktestChartJSConfig(formula);
 			const image = await canvasRenderService.renderToBuffer(config);
-			console.log(`Writing "${relativePath}"`);
+			console.log(`TripleChart > Writing "${relativePath}"`);
 			fs.writeFileSync(relativePath, image);
 		}
 		if (!server) {
@@ -110,63 +108,23 @@ export const createWeeklyClustersDigest = async (code: string, dates: DatesInter
 			})
 		}
 	}
-
-	return {
-		htmlReport: `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Weekly Digest</title>
-  <style>
-    body {
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      padding: 0;
-      margin: 0;
-      background: #eee;
-      color: black;
-      height: 100vh;
-    }
-    table {
-      border-collapse: collapse;
-      font-size: 10px;
-      table-layout: fixed;
-    }
-    td, th {
-      border: 1px solid darkgray;
-      text-align: center;
-      padding: 1px 3px;
-      white-space: nowrap;
-      color: black;
-      vertical-align: center;
-    }
-    td a {
-    	text-decoration: none;
-    	color: inherit;
-    }
-    .sell-row {
-      background-color: #eed4d4;
-    }
-    .buy-row {
-      background-color: #d4eed4;
-    }
-    .al-r {
-      text-align: right;
-    }
-    .loss {
-      color: red;
-    }
-    .profit {
-      color: darkgreen;
-    }
-  </style>
-</head>
-<body>
-<div style="color: black; font-size: 12px; font-weight: bold" id="888" name="888">"${code}": ${date2SQLstring(dates.from)} - ${date2SQLstring(dates.to)}</div>
-${tableClusters}
-${embedded.join('')}
-</body>
-</html>`,
-		attachments,
-	};
+	return { embedded, attachments };
 };
+
+export type TripleChartParams = {
+	prefix: string;
+	formulas: Formula[];
+	bactestsChartDimensions?: ChartDimensions;
+	patternsChartDimensions?: ChartDimensions;
+	topId: string;
+}
+
+export type ChartDimensions = {
+	width: number;
+	height: number;
+};
+
+export type TripleChartResult = {
+	embedded: string[];
+	attachments: Attachment[];
+}
