@@ -4,14 +4,14 @@ import { date2SQLstring } from "../helpers/utils";
 import { DatesInterval } from "../data-service/types";
 import { tripleChart } from "./charts/triple-chart";
 
-export const createClustersDigest = async (code: string, dates: DatesInterval): Promise<{
+export const createClustersDigest = async (code: string, dates: DatesInterval, topSlice?: number, onFire?: boolean): Promise<{
 	htmlReport: string;
 	attachments: Attachment[],
 }> => {
-	const { tableClusters, formulasClusters } = await getTableClusters(code, dates);
+	const { tableClusters, formulasClusters } = await getTableClusters(code, dates, topSlice, onFire);
 	const topId = '888';
 	const { embedded, attachments } = await tripleChart({
-		prefix: 'weekly-clusters-digest',
+		prefix: 'clusters-digest',
 		formulas: formulasClusters,
 		topId,
 	});

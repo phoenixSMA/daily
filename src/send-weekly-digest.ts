@@ -13,8 +13,8 @@ import { ModifyDateTime } from "./helpers/constants";
 		}
 	});
 
-	// const codes = ['C', 'S', 'SM', 'BO', 'W', 'KW', 'LC', 'LN', 'FC', 'NG', 'CL', 'HO', 'RB'];
-	const codes = ['C'];
+	const codes = ['C', 'S', 'SM', 'BO', 'W', 'KW', 'LC', 'LN', 'FC', 'NG', 'CL', 'HO', 'RB'];
+	// const codes = ['NG'];
 
 	const dates: DatesInterval = {
 		from: modifyDateTime(new Date(), ModifyDateTime.Days, 2),
@@ -22,19 +22,30 @@ import { ModifyDateTime } from "./helpers/constants";
 	};
 
 	for (const code of codes) {
-		const subject = `"${code}" Weekly Digest`;
-		const { htmlReport, attachments } = await createClustersDigest(code, dates);
+		let subject = `"${code}" Weekly Digest Upcoming`;
+		let { htmlReport, attachments } = await createClustersDigest(code, dates, 10, false);
 
 		const mailOptions = {
 			from: 'phoenixsma@gmail.com',
 			to: 'phoenixsma@gmail.com',
 			subject,
-			text: 'Report',
+			text: 'Upcoming Report',
 			html: htmlReport,
 			attachments,
 		};
 
-		const info = await transporter.sendMail(mailOptions);
+		let info = await transporter.sendMail(mailOptions);
+		console.log('Email sent: ' + info.response);
+
+		subject = `"${code}" Weekly Digest On Fire`;
+		({ htmlReport, attachments } = await createClustersDigest(code, dates, 10, true));
+
+		mailOptions.subject = subject;
+		mailOptions.text = 'On Fire Report';
+		mailOptions.html = htmlReport;
+		mailOptions.attachments = attachments;
+
+		info = await transporter.sendMail(mailOptions);
 		console.log('Email sent: ' + info.response);
 	}
 

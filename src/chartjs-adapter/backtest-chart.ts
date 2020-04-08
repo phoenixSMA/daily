@@ -48,7 +48,7 @@ export const getBacktestChartJSConfig = async (formula: Formula, depth: number =
 			maintainAspectRatio: false,
 			title: {
 				display: true,
-				text: formula,
+				text: `${formula} (depth: ${depth})`,
 			},
 			legend: {
 				display: false,

@@ -58,16 +58,16 @@ export const tripleChart = async (params: TripleChartParams): Promise<TripleChar
 					totalLimits.x.max = totalLimits.x.max > limits.x.max ? totalLimits.x.max : limits.x.max;
 					totalLimits.y.min = totalLimits.y.min < limits.y.min ? totalLimits.y.min : limits.y.min;
 					totalLimits.y.max = totalLimits.y.max > limits.y.max ? totalLimits.y.max : limits.y.max;
+					if (!server) {
+						attachments.push({
+							filename,
+							path: relativePath,
+							cid,
+						})
+					}
 				} else {
 					embedded.pop();
 				}
-			}
-			if (!server) {
-				attachments.push({
-					filename,
-					path: relativePath,
-					cid,
-				})
 			}
 		}
 		if (rewrite) {

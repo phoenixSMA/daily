@@ -6,11 +6,19 @@ import { BacktestClusters, Backtests } from "../../chartjs-adapter/data-types";
 import { Spread } from "../../data-service/spread";
 import { Side } from "../../data-service/constants";
 
-export const getTableClusters = async (code: string, dates: DatesInterval): Promise<TableClusters> => {
+export const getTableClusters = async (code: string, dates: DatesInterval, topSlice: number, onFire: boolean = false): Promise<TableClusters> => {
 	const connector = new MySQLConnector();
 	const maxWidth = ['NG', 'CL', 'HO', 'RB'].includes(code) ? 3 : 12;
-	const select = `SELECT *, b.* from backtest_clusters JOIN backtests as b USING(b_id) WHERE LEFT(b.ind, LENGTH(b.ind) - 11) = '${code}' AND date_enter_from >= '${date2SQLstring(dates.from)}' AND date_enter_from <= '${date2SQLstring(dates.to)}' ORDER BY sum_pnlpd DESC`;
-	const res: (Backtests & BacktestClusters)[] = await connector.query(select);
+	let select: string;
+	if (onFire) {
+		select = `SELECT *, b.* from backtest_clusters JOIN backtests as b USING(b_id) WHERE LEFT(b.ind, LENGTH(b.ind) - 11) = '${code}' AND date_enter_from <= '${date2SQLstring(dates.from)}' AND date_enter_to >= '${date2SQLstring(dates.from)}' ORDER BY sum_pnlpd DESC`;
+	} else {
+		select = `SELECT *, b.* from backtest_clusters JOIN backtests as b USING(b_id) WHERE LEFT(b.ind, LENGTH(b.ind) - 11) = '${code}' AND date_enter_from >= '${date2SQLstring(dates.from)}' AND date_enter_from <= '${date2SQLstring(dates.to)}' ORDER BY sum_pnlpd DESC`;
+	}
+	let res: (Backtests & BacktestClusters)[] = await connector.query(select);
+	if (topSlice) {
+		res = res.slice(0, topSlice);
+	}
 	const clusters = [];
 	for (const cluster of res) {
 		const spread = new Spread(cluster.formula, connector);
