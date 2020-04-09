@@ -34,7 +34,7 @@ export const tripleChart = async (params: TripleChartParams): Promise<TripleChar
 		let embedPart = `<br><a href="#${topId}" name="${idx}" id="${idx}">${formula}</a>`;
 		const totalLimits: Limits = {
 			x: {
-				min: new Date('20171-02-17'),
+				min: new Date('2071-02-17'),
 				max: new Date('1971-02-17'),
 			},
 			y: {
