@@ -9,13 +9,15 @@ import {
 	KlineRecord,
 	Leg,
 	PatternDepth,
-	Patterns
+	Patterns,
+	TabData,
+	TabsData,
 } from "./types";
-import { AverageType, Side, SortDirection } from "./constants";
-import { correctMySQLDateTime, date2SQLstring, diffDays, modifyDateTime } from "../helpers/utils";
+import { AverageType, Side, SortDirection, } from "./constants";
+import { correctMySQLDateTime, date2SQLstring, diffDays, modifyDateTime, } from "../helpers/utils";
 import { Spread } from "./spread";
 import { ModifyDateTime } from "../helpers/constants";
-import { Backtests } from "../chartjs-adapter/data-types";
+import { Backtests, PnLReports, Trades } from "../chartjs-adapter/data-types";
 
 export class DataSource {
 	private readonly _connector: MySQLConnector;
@@ -203,5 +205,94 @@ export class DataSource {
 			pnl: row.average_sm_pnl,
 			pnlpd: row.average_sm_pnlpd,
 		}))
+	}
+
+	public async getTradeCommission(trade_id: number): Promise<number> {
+		const select = `SELECT SUM(comm) as comm FROM trades_legs WHERE trade_id = ${trade_id}`;
+		const commission = await this._connector.query(select);
+		return commission.length > 0 ? commission[0].comm : 0;
+	}
+
+	public async getTabsDataOnDate(portfolioName: string, date: Date): Promise<TabsData> {
+		let select = `SELECT tab_ids FROM portfolio WHERE name='${portfolioName}'`;
+		const res = await this._connector.query(select);
+		if (res.length === 0) {
+			return null;
+		}
+		const tab_ids = res[0].tab_ids.split('|').join(',');
+		select = `SELECT DISTINCT tab_id, formula FROM trades WHERE date <= '${date2SQLstring(date)}' AND tab_id IN (${tab_ids})`;
+		const tabs = await this._connector.query(select);
+		const tabsData: TabsData = {
+			opened: [],
+			closed: [],
+		}
+		for (const tab of tabs) {
+			const { tab_id, formula } = tab;
+			const spread = new Spread(formula, this._connector);
+			await spread.getLegsData();
+			const select = `SELECT trade_id, date, side, price, quantity FROM trades WHERE date <= '${date2SQLstring(date)}' AND tab_id = ${tab_id} ORDER BY date, time`;
+			const trades: Partial<Trades>[] = await this._connector.query(select);
+			const total = {
+				qty: 0,
+				value: 0,
+				commission: 0,
+			}
+			for (const trade of trades) {
+				const direction = trade.side === Side.Buy ? 1 : -1;
+				total.qty += trade.quantity * direction;
+				total.value += trade.price * trade.quantity * direction;
+				total.commission += await this.getTradeCommission(trade.trade_id);
+			}
+			const tabData: TabData = {
+				tab_id,
+				formula,
+				side: trades[0].side,
+				commission: +total.commission.toFixed(2),
+				openedAt: correctMySQLDateTime(trades[0].date),
+			}
+			if (total.qty === 0) {
+				tabsData.closed.push({
+					...tabData,
+					points: +total.value.toFixed(spread.comma),
+					pnl: +(-total.value * spread.multiplier - tabData.commission).toFixed(2),
+					closedAt: correctMySQLDateTime(trades[trades.length - 1].date),
+				})
+			} else {
+				const qty = Math.abs(total.qty);
+				const adjustedPrice = total.value / total.qty + tabData.commission / total.qty / spread.multiplier;
+				tabsData.opened.push({
+					...tabData,
+					qty,
+					price: +(total.value / total.qty).toFixed(4),
+					adjustedPrice,
+				})
+			}
+		}
+		return tabsData;
+	}
+
+	public async getLast(formula: Formula, date?: Date): Promise<number | null> {
+		const kline = await this.getSpreadKline(formula, SortDirection.Desc);
+		if (kline.length === 0) {
+			return null;
+		}
+		if (!date) {
+			return DataSource.getKlinePrice(kline[0]);
+		} else {
+			const klineRecord = kline.find(_klineRecord => DataSource.getKlineDate(_klineRecord) <= date2SQLstring(date));
+			if (!klineRecord) {
+				return null;
+			} else {
+				return DataSource.getKlinePrice(klineRecord);
+			}
+		}
+	}
+
+	public async getPnlLines(portfolioName: string, startDate: Date, endDate: Date): Promise<{ total: Kline; closed: Kline }> {
+		const select = `SELECT * FROM pnl_reports WHERE name = '${portfolioName}' AND date >= '${date2SQLstring(startDate)}' AND date <= '${date2SQLstring(endDate)}' ORDER BY date ASC`;
+		const result: PnLReports[] = await this._connector.query(select);
+		const total: Kline = result.map((row) => ({ [date2SQLstring(correctMySQLDateTime(row.date))]: row.total }));
+		const closed: Kline = result.map((row) => ({ [date2SQLstring(correctMySQLDateTime(row.date))]: row.closed }));
+		return { total, closed };
 	}
 }

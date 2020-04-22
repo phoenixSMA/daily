@@ -57,3 +57,23 @@ export type BacktestRecord = {
 	pnl: BacktestValue;
 	pnlpd: BacktestValue;
 };
+
+export type TabsData = {
+	opened: TabData[],
+	closed: TabData[],
+}
+
+export type TabData = {
+	tab_id: number;
+	formula: Formula;
+	side: Side;
+	openedAt: Date;
+	closedAt?: Date;
+	qty?: number;
+	price?: number;
+	adjustedPrice?: number;
+	points?: number;
+	pnl?: number;
+	last?: number;
+	commission: number;
+}

@@ -4,8 +4,9 @@ import { getPatternsBacktestChartJSConfig } from "../chartjs-adapter/patterns-ba
 import * as fs from "fs";
 import { Attachment } from "nodemailer/lib/mailer";
 import { cleanDir } from "../helpers/utils";
+import { getPortfolioPnLChartJSConfig } from "../chartjs-adapter/portfolio-pnl-chart";
 
-export const createPortfolioReport = async (portfolio: string): Promise<{
+export const createPortfolioReport = async (portfolioName: string): Promise<{
 	htmlReport: string;
 	attachments: Attachment[]
 }> => {
@@ -14,7 +15,7 @@ export const createPortfolioReport = async (portfolio: string): Promise<{
 	console.log('process.env.initiator:', process.env.initiator);
 	console.log('process.env.rewrite:', process.env.rewrite);
 	console.log('Creating tables...');
-	const { tableOpened, tableClosed, formulasOpened } = await tablesPortfolioReport(portfolio);
+	const { tableOpened, tableClosed, formulasOpened } = await tablesPortfolioReport(portfolioName);
 	const prefix = 'portfolio-report';
 	let embedded = '';
 	const attachments = [];
@@ -46,6 +47,27 @@ export const createPortfolioReport = async (portfolio: string): Promise<{
 			})
 		}
 	}
+	console.log('Creating PnL Report...');
+	const cid = 'pnl';
+	const filename = `${prefix}.pnl.jpg`;
+	const relativePath = `src/img/${filename}`;
+	const imgSrc = server ? `img/${filename}` : `cid:${cid}`;
+	embedded = `<br><a href="#888">PnL Chart</a> <br><img src="${imgSrc}" alt="pnl">` + embedded;
+	if (rewrite) {
+		const canvasRenderService = new CanvasRenderService(width, height);
+		const config = await getPortfolioPnLChartJSConfig(portfolioName, new Date('2020-01-01'), new Date());
+		const image = await canvasRenderService.renderToBuffer(config);
+		console.log(`Writing "${relativePath}"`);
+		fs.writeFileSync(relativePath, image);
+	}
+	if (!server) {
+		attachments.unshift({
+			filename,
+			path: relativePath,
+			cid,
+		})
+	}
+
 	return {
 		htmlReport: `	
 <!DOCTYPE html>

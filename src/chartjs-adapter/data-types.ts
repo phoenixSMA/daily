@@ -1,4 +1,5 @@
 import { Formula } from "../data-service/types";
+import { Side } from "../data-service/constants";
 
 export type Backtests = {
 	b_id: number;
@@ -83,4 +84,25 @@ export type BacktestData = {
 	r_worst_date: Date | null;
 	r_worst: number | null;
 	r_drawdown: number | null;
+}
+
+export type Trades = {
+	trade_id: number;
+	tab_id: number;
+	date: Date;
+	time: Date;
+	side: Side;
+	formula: Formula;
+	init_margin: number;
+	main_margin: number;
+	price: number
+	quantity: number;
+	comment: string;
+}
+
+export type PnLReports = {
+	name: string;
+	date: Date;
+	total: number;
+	closed: number;
 }
