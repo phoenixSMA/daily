@@ -117,13 +117,15 @@ export const getPatternsBacktestChartJSConfig = async (formula: Formula, positio
 		}
 	};
 
-	const last: ChartPoint = {
-		x: DataSource.getKlineDate(data.klines.filledGapsTruncated[0][data.klines.filledGapsTruncated[0].length - 1]),
-		y: DataSource.getKlinePrice(data.klines.filledGapsTruncated[0][data.klines.filledGapsTruncated[0].length - 1]),
-	};
-	config.data.datasets.push(scatterLast(last));
+	if (data.klines.filledGapsTruncated[0].length> 0) {
+		const last: ChartPoint = {
+			x: DataSource.getKlineDate(data.klines.filledGapsTruncated[0][data.klines.filledGapsTruncated[0].length - 1]),
+			y: DataSource.getKlinePrice(data.klines.filledGapsTruncated[0][data.klines.filledGapsTruncated[0].length - 1]),
+		};
+		config.data.datasets.push(scatterLast(last));
 
-	config.data.datasets.push(lineCurrent(data.klines.filledGapsTruncated[0]));
+		config.data.datasets.push(lineCurrent(data.klines.filledGapsTruncated[0]));
+	}
 
 	config.data.datasets.push(...linesPatterns(data.patterns));
 
