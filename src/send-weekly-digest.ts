@@ -17,7 +17,7 @@ import { ModifyDateTime } from "./helpers/constants";
 	// const codes = ['NG'];
 
 	const dates: DatesInterval = {
-		from: modifyDateTime(new Date(), ModifyDateTime.Days, 2),
+		from: modifyDateTime(new Date(), ModifyDateTime.Days, 1),
 		to: modifyDateTime(new Date(), ModifyDateTime.Days, 8),
 	};
 
@@ -37,11 +37,22 @@ import { ModifyDateTime } from "./helpers/constants";
 		let info = await transporter.sendMail(mailOptions);
 		console.log('Email sent: ' + info.response);
 
-		subject = `"${code}" Weekly Digest On Fire`;
 		({ htmlReport, attachments } = await createClustersDigest(code, dates, 10, true));
-
-		mailOptions.subject = subject;
+		mailOptions.subject = `"${code}" Weekly Digest On Fire`;
 		mailOptions.text = 'On Fire Report';
+		mailOptions.html = htmlReport;
+		mailOptions.attachments = attachments;
+
+		info = await transporter.sendMail(mailOptions);
+		console.log('Email sent: ' + info.response);
+
+		const dates1 = {
+			from: modifyDateTime(new Date(), ModifyDateTime.Days, 9),
+			to: modifyDateTime(new Date(), ModifyDateTime.Days, 39),
+		};
+		({ htmlReport, attachments } = await createClustersDigest(code, dates1, 10, false));
+		mailOptions.subject = `"${code}" Monthly Digest Upcoming`;
+		mailOptions.text = 'Upcoming Report';
 		mailOptions.html = htmlReport;
 		mailOptions.attachments = attachments;
 
