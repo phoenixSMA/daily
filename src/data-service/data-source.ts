@@ -14,7 +14,7 @@ import {
 	TabsData,
 } from "./types";
 import { AverageType, Side, SortDirection, } from "./constants";
-import { correctMySQLDateTime, date2SQLstring, diffDays, modifyDateTime, } from "../helpers/utils";
+import { date2UTCdate, date2SQLstring, diffDays, modifyDateTime, } from "../helpers/utils";
 import { Spread } from "./spread";
 import { ModifyDateTime } from "../helpers/constants";
 import { Backtests, PnLReports, Trades } from "../chartjs-adapter/data-types";
@@ -60,8 +60,8 @@ export class DataSource {
 
 	public static getFilledGapsKline(kline: Kline, exclude0229: boolean = true): Kline {
 		const output: Kline = [];
-		let lastDate: KlineDate;
-		let lastPrice: KlinePrice;
+		let lastDate: KlineDate | null = null;
+		let lastPrice: KlinePrice = 0;
 		for (const klineRecord of kline) {
 			if (!lastDate) {
 				output.push(klineRecord);
@@ -185,7 +185,7 @@ export class DataSource {
 	public async getContractKline(contract: string, sortDirection: SortDirection = SortDirection.Asc): Promise<Kline> {
 		const select = `SELECT date, settle FROM settle WHERE contract = '${contract}' ORDER BY date ${sortDirection}`;
 		const result = await this._connector.query(select);
-		return result.map((row: { date: Date; settle: number }) => ({ [date2SQLstring(correctMySQLDateTime(row.date))]: row.settle }));
+		return result.map((row: { date: Date; settle: number }) => ({ [date2SQLstring(date2UTCdate(row.date))]: row.settle }));
 	}
 
 	public async getBactestIdByFormula(formula: Formula): Promise<{ b_id: number; depth: number }[]> {
@@ -200,8 +200,8 @@ export class DataSource {
 		return result.map((row: { side: Side; win_percent: number; date_enter: Date; date_exit: Date; average_sm_pnl: number, average_sm_pnlpd: number }) => ({
 			side: row.side,
 			winPercent: row.win_percent,
-			dateEnter: date2SQLstring(correctMySQLDateTime(row.date_enter)),
-			dateExit: date2SQLstring(correctMySQLDateTime(row.date_exit)),
+			dateEnter: date2SQLstring(date2UTCdate(row.date_enter)),
+			dateExit: date2SQLstring(date2UTCdate(row.date_exit)),
 			pnl: row.average_sm_pnl,
 			pnlpd: row.average_sm_pnlpd,
 		}))
@@ -248,14 +248,14 @@ export class DataSource {
 				formula,
 				side: trades[0].side,
 				commission: +total.commission.toFixed(2),
-				openedAt: correctMySQLDateTime(trades[0].date),
+				openedAt: date2UTCdate(trades[0].date),
 			}
 			if (total.qty === 0) {
 				tabsData.closed.push({
 					...tabData,
 					points: +total.value.toFixed(spread.comma),
 					pnl: +(-total.value * spread.multiplier - tabData.commission).toFixed(2),
-					closedAt: correctMySQLDateTime(trades[trades.length - 1].date),
+					closedAt: date2UTCdate(trades[trades.length - 1].date),
 				})
 			} else {
 				const qty = Math.abs(total.qty);
@@ -291,8 +291,8 @@ export class DataSource {
 	public async getPnlLines(portfolioName: string, startDate: Date, endDate: Date): Promise<{ total: Kline; closed: Kline }> {
 		const select = `SELECT * FROM pnl_reports WHERE name = '${portfolioName}' AND date >= '${date2SQLstring(startDate)}' AND date <= '${date2SQLstring(endDate)}' ORDER BY date ASC`;
 		const result: PnLReports[] = await this._connector.query(select);
-		const total: Kline = result.map((row) => ({ [date2SQLstring(correctMySQLDateTime(row.date))]: row.total }));
-		const closed: Kline = result.map((row) => ({ [date2SQLstring(correctMySQLDateTime(row.date))]: row.closed }));
+		const total: Kline = result.map((row) => ({ [date2SQLstring(date2UTCdate(row.date))]: row.total }));
+		const closed: Kline = result.map((row) => ({ [date2SQLstring(date2UTCdate(row.date))]: row.closed }));
 		return { total, closed };
 	}
 }

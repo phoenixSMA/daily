@@ -1,7 +1,7 @@
 import { DatesInterval, Formula, Formula2LegsResult, Leg } from "./types";
 import { Side, SpreadType } from "./constants";
 import { MySQLConnector } from "../connectors/mysql-connector";
-import { correctMySQLDateTime, monthCode2Number } from "../helpers/utils";
+import { date2UTCdate, monthCode2Number } from "../helpers/utils";
 
 export class Spread {
 	private readonly _originalFormula: string;
@@ -225,7 +225,7 @@ export class Spread {
 			const select = `SELECT * FROM contracts WHERE contract = '${leg.contract}'`;
 			const res = (await this._connector.query(select))[0];
 			if (res) {
-				leg.lastDate = res.first_notice ? correctMySQLDateTime(res.first_notice) : correctMySQLDateTime(res.expiry_date);
+				leg.lastDate = res.first_notice ? date2UTCdate(res.first_notice) : date2UTCdate(res.expiry_date);
 			} else {
 				leg.lastDate = new Date('1971-02-17');
 			}
@@ -243,7 +243,7 @@ export class Spread {
 
 	public getBaseInterval(): DatesInterval {
 		return {
-			from: correctMySQLDateTime( new Date(this._legs[0].year - 1, monthCode2Number(this._legs[0].month))),
+			from: date2UTCdate( new Date(this._legs[0].year - 1, monthCode2Number(this._legs[0].month))),
 			to: this._legs[0].lastDate,
 		}
 	}

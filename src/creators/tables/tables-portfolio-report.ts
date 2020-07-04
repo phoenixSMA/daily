@@ -3,7 +3,7 @@ import { TablesPortfolioReport, TableClosedData, TableOpenedData } from "../type
 import { Side, SortDirection } from "../../data-service/constants";
 import { Spread } from "../../data-service/spread";
 import { DataSource } from "../../data-service/data-source";
-import { correctMySQLDateTime, date2SQLstring } from "../../helpers/utils";
+import { date2UTCdate, date2SQLstring } from "../../helpers/utils";
 
 export const tablesPortfolioReport = async (portfolio: string): Promise<TablesPortfolioReport> => {
 	let formulasOpened: {
@@ -38,7 +38,7 @@ export const tablesPortfolioReport = async (portfolio: string): Promise<TablesPo
 		select = `SELECT * FROM trades WHERE tab_id = ${tab.tab_id} ORDER BY date, time`;
 		const trades = await mySQLConnector.query(select);
 		if (trades.length > 0) {
-			tab.opened = date2SQLstring(correctMySQLDateTime(trades[0].date));
+			tab.opened = date2SQLstring(date2UTCdate(trades[0].date));
 			for (const trade of trades) {
 				const sign = trade.side === Side.Buy ? 1 : -1;
 				tab.qty += trade.quantity * sign;
@@ -82,8 +82,8 @@ export const tablesPortfolioReport = async (portfolio: string): Promise<TablesPo
 		select = `SELECT * FROM trades WHERE tab_id = ${tab.tab_id} ORDER BY date, time`;
 		const trades = await mySQLConnector.query(select);
 		if (trades.length > 0) {
-			tab.opened = date2SQLstring(correctMySQLDateTime(trades[0].date));
-			tab.closed = date2SQLstring(correctMySQLDateTime(trades[trades.length - 1].date));
+			tab.opened = date2SQLstring(date2UTCdate(trades[0].date));
+			tab.closed = date2SQLstring(date2UTCdate(trades[trades.length - 1].date));
 			for (const trade of trades) {
 				const sign = trade.side === Side.Buy ? 1 : -1;
 				tab.value += trade.price * trade.quantity * sign;

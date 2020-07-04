@@ -6,7 +6,7 @@ import { Spread } from "../data-service/spread";
 import { ValueType } from "./constants";
 import { linesBacktestData } from "./datasets/lines-backtest-data";
 import { scatterLast } from "./datasets/scatter-last";
-import { correctMySQLDateTime, date2SQLstring } from "../helpers/utils";
+import { date2UTCdate, date2SQLstring } from "../helpers/utils";
 import { lineCurrent } from "./datasets/line-current";
 
 export const getBacktestChartJSConfig = async (formula: Formula, depth: number = 15, valueType: ValueType = ValueType.Pnl): Promise<{ config: ChartConfiguration; limits: Limits }> => {
@@ -101,7 +101,7 @@ export const getBacktestChartJSConfig = async (formula: Formula, depth: number =
 
 	config.data.datasets.push(lineCurrent(data.truncated, 1));
 	config.data.datasets.push(scatterLast({
-		x: date2SQLstring(correctMySQLDateTime(new Date())),
+		x: date2SQLstring(date2UTCdate(new Date())),
 		y: 0
 	}, { borderWidth: 2, pointRadius: 4, yAxisID: "Yaxis2" }));
 	config.data.datasets.push(...linesBacktestData(data.backtestData, ValueType.Pnl, false));

@@ -13,7 +13,7 @@ export const diffDays = (date1: Date, date2: Date): number => {
 	return (date2.getTime() - date1.getTime()) / 24 / 60 / 60 / 1000;
 };
 
-export const correctMySQLDateTime = (date: Date): Date | null => {
+export const date2UTCdate = (date: Date): Date | null => {
 	if (date === null) {
 		return null;
 	}
